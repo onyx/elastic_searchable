@@ -149,6 +149,20 @@ class TestElasticSearchable < Test::Unit::TestCase
         end
       end
     end
+    context "Model.index_exists?" do
+      setup do
+        Post.delete_index
+      end
+
+      should "return false if index does not exist" do
+        assert_equal false, Post.index_exists?
+      end
+
+      should "return true if index exists" do
+        Post.create_index
+        assert_equal true, Post.index_exists?
+      end
+    end
   end
 
   context 'with index containing multiple results' do
@@ -302,6 +316,13 @@ class TestElasticSearchable < Test::Unit::TestCase
           }
         }
         assert_equal expected, @status, @status.inspect
+      end
+    end
+    context "reindex" do
+      should "create the index if it does not exist" do
+        assert_nothing_raised do
+          User.reindex
+        end
       end
     end
   end

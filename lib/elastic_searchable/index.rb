@@ -13,8 +13,13 @@ module ElasticSearchable
       # http://www.elasticsearch.com/docs/elasticsearch/rest_api/admin/indices/put_mapping/
       def update_index_mapping
         if mapping = self.elastic_options[:mapping]
+          create_index unless index_exists?
           ElasticSearchable.request :put, index_type_path('_mapping'), :json_body => {index_type => mapping}
         end
+      end
+
+      def index_exists?
+        ElasticSearchable.request(:get, '/_status')['indices'].include?(index_name)
       end
 
       # create the index
@@ -107,7 +112,7 @@ module ElasticSearchable
 
     module InstanceMethods
       # reindex the object in elasticsearch
-      # fires after_index callbacks after operation is complete 
+      # fires after_index callbacks after operation is complete
       # see http://www.elasticsearch.org/guide/reference/api/index_.html
       def reindex(lifecycle = nil)
         query = {}
