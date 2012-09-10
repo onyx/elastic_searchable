@@ -99,9 +99,27 @@ module ElasticSearchable
           options.merge! :page => (options[:page] + 1)
           records = scope.paginate(options)
         end
+
+        def disable_refresh
+          set_refresh_interval '-1'
+        end
+
+        def enable_refresh
+          set_refresh_interval '1'
+        end
+
+        def optimize
+          ElasticSearchable.request :post, index_path('_optimize')
+        end
       end
 
       private
+
+      def set_refresh_interval interval
+        refresh_settings = { :index => { :refresh_interval => interval }}
+        ElasticSearchable.request :put, index_path('_settings'), :body => ElasticSearchable.encode_json(refresh_settings)
+      end
+
       def index_name
         self.elastic_options[:index] || ElasticSearchable.default_index
       end
