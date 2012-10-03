@@ -40,10 +40,15 @@ module ElasticSearchable
 
       page = WillPaginate::Collection.new(page, options[:size], hits['total'])
       page.replace results
-      page
+
+      {
+        :results => page,
+        :request => ElasticSearchable.encode_json(options)
+      }
     end
 
     private
+
     # determine the number of search results per page
     # supports will_paginate configuration by using:
     # Model.per_page

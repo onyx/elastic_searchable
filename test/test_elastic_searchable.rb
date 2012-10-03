@@ -175,7 +175,7 @@ class TestElasticSearchable < Test::Unit::TestCase
 
     context 'searching for results' do
       setup do
-        @results = Post.search 'first'
+        @results = Post.search('first')[:results]
       end
       should 'find created object' do
         assert_contains @results, @first_post
@@ -202,7 +202,7 @@ class TestElasticSearchable < Test::Unit::TestCase
               ]
             }
           }
-        })
+        })[:results]
       end
       should 'find only the object which ' do
         assert_does_not_contain @results, @first_post
@@ -212,7 +212,7 @@ class TestElasticSearchable < Test::Unit::TestCase
 
     context 'searching for second page using will_paginate params' do
       setup do
-        @results = Post.search 'foo', :page => 2, :per_page => 1, :sort => 'id'
+        @results = Post.search('foo', :page => 2, :per_page => 1, :sort => 'id')[:results]
       end
       should 'not find objects from first page' do
         assert_does_not_contain @results, @first_post
@@ -230,7 +230,7 @@ class TestElasticSearchable < Test::Unit::TestCase
 
     context 'sorting search results' do
       setup do
-        @results = Post.search 'foo', :sort => 'id:desc'
+        @results = Post.search('foo', :sort => 'id:desc')[:results]
       end
       should 'sort results correctly' do
         assert_equal @second_post, @results.first
@@ -240,7 +240,7 @@ class TestElasticSearchable < Test::Unit::TestCase
 
     context 'advanced sort options' do
       setup do
-        @results = Post.search 'foo', :sort => [{:id => 'desc'}]
+        @results = Post.search('foo', :sort => [{:id => 'desc'}])[:results]
       end
       should 'sort results correctly' do
         assert_equal @second_post, @results.first
@@ -454,7 +454,7 @@ class TestElasticSearchable < Test::Unit::TestCase
     end
     context 'MaxPageSizeClass.search with default options' do
       setup do
-        @results = MaxPageSizeClass.search 'foo'
+        @results = MaxPageSizeClass.search('foo')[:results]
       end
       should 'have one per page' do
         assert_equal 1, @results.per_page
