@@ -3,6 +3,7 @@ require 'will_paginate/collection'
 module ElasticSearchable
   module Queries
     PER_PAGE_DEFAULT = 20
+    DEFAULT_FACET_COUNT = 1000
 
     # search returns a will_paginate collection of ActiveRecord objects for the search results
     # supported options:
@@ -33,8 +34,13 @@ module ElasticSearchable
         query[:sort] = sort
       end
 
+      if requested_facets = options.delete(:facets)
+        options[:facets] = facet_query_from requested_facets
+      end
+
       response = ElasticSearchable.request :get, index_type_path('_search'), :query => query, :json_body => options
       hits = response['hits']
+      facets = response['facets']
       ids = hits['hits'].collect {|h| h['_id'].to_i }
       results = self.find(ids).sort_by {|result| ids.index(result.id) }
 
@@ -43,7 +49,8 @@ module ElasticSearchable
 
       {
         :results => page,
-        :request => ElasticSearchable.encode_json(options)
+        :request => ElasticSearchable.encode_json(options),
+        :facets => facets_response_from(facets)
       }
     end
 
@@ -58,5 +65,34 @@ module ElasticSearchable
       per_page = [per_page.to_i, self.max_per_page].min if self.respond_to?(:max_per_page)
       per_page
     end
+
+    def facet_query_from request
+      request.inject({}) do |hash, field|
+        hash.merge({
+          field => {
+            :terms => {
+              :field => field,
+              :size => DEFAULT_FACET_COUNT
+            }
+          }
+        })
+      end
+    end
+
+    def facets_response_from facets
+      return {} if facets.nil?
+      facets.keys.inject({}) do |hash, field|
+        hash.merge(facet_response_for_field(facets, field))
+      end
+    end
+
+    def facet_response_for_field facets, field
+      counts = facets[field]['terms'].map do |term|
+        { term['term'] => term['count'] }
+      end
+      counts << { nil => facets[field]['missing'] }
+      { field.to_sym => counts }
+    end
+
   end
 end

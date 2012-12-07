@@ -38,6 +38,7 @@ class TestElasticSearchable < Test::Unit::TestCase
       @indexed_on_update
     end
   end
+
   context 'activerecord class with default elastic_searchable config' do
     setup do
       @clazz = Post

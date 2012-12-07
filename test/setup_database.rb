@@ -8,6 +8,11 @@ ActiveRecord::Schema.define(:version => 1) do
     t.column :body, :string
     t.column :name, :string
   end
+  create_table :things, :force => true do |t|
+    t.column :title, :string
+    t.column :body, :string
+    t.column :name, :string
+  end
   create_table :blogs, :force => true do |t|
     t.column :title, :string
     t.column :body, :string
