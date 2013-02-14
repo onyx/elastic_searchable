@@ -17,7 +17,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency(%q<activerecord>, ["~> 2.3.5"])
   s.add_runtime_dependency(%q<httparty>, ["~> 0.6.0"])
   s.add_runtime_dependency(%q<will_paginate>, ["~> 2.3.15"])
-  s.add_runtime_dependency(%q<larsklevan-after_commit>, ["~> 1.0.5"])
+  s.add_runtime_dependency(%q<after_commit>, ["~> 1.0.11"])
   s.add_development_dependency(%q<shoulda>, [">= 0"])
   s.add_development_dependency(%q<mocha>, [">= 0"])
   s.add_development_dependency(%q<jeweler>, ["~> 1.5.2"])
