@@ -74,6 +74,7 @@ module ElasticSearchable
         options.reverse_merge! :page => 1, :per_page => 1000, :total_entries => 1
         scope = options.delete(:scope) || self
 
+        errors = []
         records = scope.paginate(options)
         while records.any? do
           ElasticSearchable.logger.debug "reindexing batch ##{records.current_page}..."
@@ -86,12 +87,15 @@ module ElasticSearchable
               actions << ElasticSearchable.encode_json({:index => {'_index' => index_name, '_type' => index_type, '_id' => record.id}})
               actions << doc
             rescue => e
+              errors << record.id
               ElasticSearchable.logger.warn "Unable to bulk index record: #{record.inspect} [#{e.message}]"
             end
           end
+
           begin
             ElasticSearchable.request(:put, '/_bulk', :body => "\n#{actions.join("\n")}\n") if actions.any?
           rescue ElasticError => e
+            errors = errors | records.map(&:id)
             ElasticSearchable.logger.warn "Error indexing batch ##{options[:page]}: #{e.message}"
             ElasticSearchable.logger.warn e
           end
@@ -99,6 +103,8 @@ module ElasticSearchable
           options.merge! :page => (options[:page] + 1)
           records = scope.paginate(options)
         end
+
+        errors
       end
 
       def disable_refresh
