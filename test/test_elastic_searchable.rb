@@ -130,7 +130,7 @@ class TestElasticSearchable < Test::Unit::TestCase
 
       Post.class_eval do
         def as_json_for_index
-          raise StandardError.new if id == error_id
+          raise Exception.new if id == error_id
           super
         end
       end

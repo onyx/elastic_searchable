@@ -86,7 +86,7 @@ module ElasticSearchable
               doc = ElasticSearchable.encode_json(record.as_json_for_index)
               actions << ElasticSearchable.encode_json({:index => {'_index' => index_name, '_type' => index_type, '_id' => record.id}})
               actions << doc
-            rescue => e
+            rescue Exception => e
               errors << record.id
               ElasticSearchable.logger.warn "Unable to bulk index record: #{record.inspect} [#{e.message}]"
             end
