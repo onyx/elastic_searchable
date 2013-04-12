@@ -348,7 +348,7 @@ class TestElasticSearchable < Test::Unit::TestCase
         expected = {
           "users"=> {
             "properties"=> {
-              "name"=> {"type"=>"string", "index"=>"not_analyzed"}
+              "name"=> {"type"=>"string", "omit_norms" => true, "index"=>"not_analyzed", "index_options"=>"docs"}
             }
           }
         }
@@ -393,7 +393,7 @@ class TestElasticSearchable < Test::Unit::TestCase
     should "send the optimize command" do
       response = User.optimize
 
-      assert_equal response, ElasticSearchable.request(:post, '/elastic_searchable/_optimize')
+      assert_equal ElasticSearchable.request(:post, '/elastic_searchable/_optimize'), response
     end
   end
 
