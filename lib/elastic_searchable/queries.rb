@@ -3,7 +3,6 @@ require 'will_paginate/collection'
 module ElasticSearchable
   module Queries
     PER_PAGE_DEFAULT = 20
-    DEFAULT_FACET_COUNT = 1000
 
     # search returns a will_paginate collection of ActiveRecord objects for the search results
     # supported options:
@@ -67,12 +66,13 @@ module ElasticSearchable
     end
 
     def facet_query_from request
-      request.inject({}) do |hash, field|
+      request.inject({}) do |hash, attr_hash|
+        field = attr_hash.keys.first
         hash.merge({
           field => {
             :terms => {
               :field => field,
-              :size => DEFAULT_FACET_COUNT
+              :size => attr_hash[field]
             }
           }
         })
@@ -90,8 +90,13 @@ module ElasticSearchable
       counts = facets[field]['terms'].map do |term|
         { term['term'] => term['count'] }
       end
-      counts << { nil => facets[field]['missing'] }
-      { field.to_sym => counts }
+
+      { field.to_sym => {
+          :counts => counts,
+          :missing => facets[field]['missing'],
+          :other => facets[field]['other']
+        }
+      }
     end
 
   end
