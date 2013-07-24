@@ -145,7 +145,10 @@ module ElasticSearchable
             result.instance_variable_set '@hit', hits['hits'][ids.index(result.id)]
           end
 
-          ElasticSearchable::Paginator.handler.new(results, page, options[:size], hits['total'])
+         {
+           :request => ElasticSearchable.encode_json(options),
+           :results => ElasticSearchable::Paginator.handler.new(results, page, options[:size], hits['total'])
+         }
         end
 
         def index_type

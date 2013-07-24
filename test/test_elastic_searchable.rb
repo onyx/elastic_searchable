@@ -218,7 +218,7 @@ class TestElasticSearchable < Test::Unit::TestCase
 
     context 'searching on a term that returns one result' do
       setup do
-        @results = Post.search 'first'
+        @results = Post.search('first')[:results]
       end
       should 'find created object' do
         assert_contains @results, @first_post
@@ -235,7 +235,7 @@ class TestElasticSearchable < Test::Unit::TestCase
     end
     context 'searching on a term that returns multiple results' do
       setup do
-        @results = Post.search 'foo', :sort => 'title'
+        @results = Post.search('foo', :sort => 'title')[:results]
       end
       should 'have populated hit on each record with the correct hit json' do
         assert_equal @results.first.hit['_id'], @first_post.id.to_s
@@ -257,7 +257,7 @@ class TestElasticSearchable < Test::Unit::TestCase
               ]
             }
           }
-        })
+        })[:results]
       end
       should 'find only the object which ' do
         assert_does_not_contain @results, @first_post
@@ -267,7 +267,7 @@ class TestElasticSearchable < Test::Unit::TestCase
 
     context 'when per_page is a string' do
       setup do
-        @results = Post.search 'foo', :per_page => 1.to_s, :sort => 'title'
+        @results = Post.search('foo', :per_page => 1.to_s, :sort => 'title')[:results]
       end
       should 'find first object' do
         assert_contains @results, @first_post
@@ -276,7 +276,7 @@ class TestElasticSearchable < Test::Unit::TestCase
 
     context 'searching for second page using will_paginate params' do
       setup do
-        @results = Post.search 'foo', :page => 2, :per_page => 1, :sort => 'title'
+        @results = Post.search('foo', :page => 2, :per_page => 1, :sort => 'title')[:results]
       end
       should 'not find objects from first page' do
         assert_does_not_contain @results, @first_post
@@ -294,7 +294,7 @@ class TestElasticSearchable < Test::Unit::TestCase
 
     context 'sorting search results' do
       setup do
-        @results = Post.search 'foo', :sort => 'title:desc'
+        @results = Post.search('foo', :sort => 'title:desc')[:results]
       end
       should 'sort results correctly' do
         assert_equal @second_post, @results.first
@@ -304,7 +304,7 @@ class TestElasticSearchable < Test::Unit::TestCase
 
     context 'advanced sort options' do
       setup do
-        @results = Post.search 'foo', :sort => [{:title => 'desc'}]
+        @results = Post.search('foo', :sort => [{:title => 'desc'}])[:results]
       end
       should 'sort results correctly' do
         assert_equal @second_post, @results.first
@@ -509,7 +509,7 @@ class TestElasticSearchable < Test::Unit::TestCase
     context 'MaxPageSizeClass.search with default options and WillPaginate' do
       setup do
         ElasticSearchable::Paginator.handler = ElasticSearchable::Pagination::WillPaginate
-        @results = MaxPageSizeClass.search 'foo'
+        @results = MaxPageSizeClass.search('foo')[:results]
       end
       should 'have one per page' do
         assert_equal 1, @results.per_page
@@ -525,7 +525,7 @@ class TestElasticSearchable < Test::Unit::TestCase
     context 'MaxPageSizeClass.search with default options and Kaminari' do
       setup do
         ElasticSearchable::Paginator.handler = ElasticSearchable::Pagination::Kaminari
-        @results = MaxPageSizeClass.search 'foo'
+        @results = MaxPageSizeClass.search('foo')[:results]
       end
       should 'have one per page' do
         assert_equal 1, @results.per_page
