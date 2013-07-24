@@ -199,7 +199,25 @@ module ElasticSearchable
           ElasticSearchable.request(:get, '/_status')['indices'].include?(ElasticSearchable.index_name)
         end
 
+        def disable_refresh
+          set_refresh_interval '-1'
+        end
+
+        def enable_refresh
+          set_refresh_interval '1'
+        end
+
+        def optimize
+          ElasticSearchable.request :post, ElasticSearchable.request_path('_optimize')
+        end
+
         private
+
+        def set_refresh_interval interval
+          refresh_settings = { :index => { :refresh_interval => interval }}
+          ElasticSearchable.request :put, ElasticSearchable.request_path('_settings'), :body => ElasticSearchable.encode_json(refresh_settings)
+        end
+
         # determine the number of search results per page
         # supports will_paginate configuration by using:
         # Model.per_page

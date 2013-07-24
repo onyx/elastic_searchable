@@ -345,6 +345,39 @@ class TestElasticSearchable < Test::Unit::TestCase
     end
   end
 
+  context "refresh interval" do
+    setup do
+      Blog.create_index
+    end
+
+    should "should be able to be disabled" do
+      Blog.disable_refresh
+
+      settings = ElasticSearchable.request :get, '/elastic_searchable/_settings'
+      assert_equal "-1", settings['elastic_searchable']['settings']['index.refresh_interval']
+    end
+
+    should "should be able to be re-enabled" do
+      Blog.disable_refresh
+      Blog.enable_refresh
+
+      settings = ElasticSearchable.request :get, '/elastic_searchable/_settings'
+      assert_equal "1", settings['elastic_searchable']['settings']['index.refresh_interval']
+    end
+  end
+
+  context "optimize" do
+    setup do
+      Blog.create_index
+    end
+
+    should "send the optimize command" do
+      response = Blog.optimize
+
+      assert_equal response, ElasticSearchable.request(:post, '/elastic_searchable/_optimize')
+    end
+  end
+
   class Friend < ActiveRecord::Base
     belongs_to :book
     elastic_searchable :json => {:include => {:book => {:only => :title}}, :only => :name}
