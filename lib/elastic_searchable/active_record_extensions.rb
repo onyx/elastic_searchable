@@ -136,8 +136,13 @@ module ElasticSearchable
             query[:sort] = sort
           end
 
+          if requested_facets = options.delete(:facets)
+            options[:facets] = facet_query_from requested_facets
+          end
+
           response = ElasticSearchable.request :get, index_mapping_path('_search'), :query => query, :json_body => options
           hits = response['hits']
+          facets = response['facets']
           ids = hits['hits'].collect {|h| h['_id'].to_i }
           results = self.find(ids).sort_by {|result| ids.index(result.id) }
 
@@ -147,7 +152,8 @@ module ElasticSearchable
 
          {
            :request => ElasticSearchable.encode_json(options),
-           :results => ElasticSearchable::Paginator.handler.new(results, page, options[:size], hits['total'])
+           :results => ElasticSearchable::Paginator.handler.new(results, page, options[:size], hits['total']),
+           :facets  => facets_response_from(facets)
          }
         end
 
@@ -184,7 +190,9 @@ module ElasticSearchable
 
         # Helper method...not sure why they removed this from AR extension in the real gem
         def create_index
-          ElasticSearchable.create_index
+          options = {}
+          options.merge! :mappings => {index_type => self.elastic_options[:mapping]} if self.elastic_options[:mapping]
+          ElasticSearchable.create_index options
         end
 
         # Helper method...not sure why they removed this from AR extension in the real gem
@@ -229,6 +237,40 @@ module ElasticSearchable
           per_page = (options.delete(:per_page) || self.per_page).to_i
           per_page = [per_page, self.max_per_page].min if self.respond_to?(:max_per_page)
           per_page
+        end
+
+        def facet_query_from request
+          request.inject({}) do |hash, attr_hash|
+            field = attr_hash.keys.first
+            hash.merge({
+              field => {
+                :terms => {
+                  :field => field,
+                  :size => attr_hash[field]
+                }
+              }
+            })
+          end
+        end
+
+        def facets_response_from facets
+          return {} if facets.nil?
+          facets.keys.inject({}) do |hash, field|
+            hash.merge(facet_response_for_field(facets, field))
+          end
+        end
+
+        def facet_response_for_field facets, field
+          counts = facets[field]['terms'].map do |term|
+            { term['term'] => term['count'] }
+          end
+
+          { field.to_sym => {
+              :counts => counts,
+              :missing => facets[field]['missing'],
+              :other => facets[field]['other']
+            }
+          }
         end
       end
 

@@ -55,8 +55,7 @@ module ElasticSearchable
 
     # create the index
     # http://www.elasticsearch.org/guide/reference/api/admin-indices-create-index.html
-    def create_index
-      options = {}
+    def create_index options = {}
       options[:settings] = self.index_settings if self.index_settings
       self.request :put, self.request_path, :json_body => options
     end
