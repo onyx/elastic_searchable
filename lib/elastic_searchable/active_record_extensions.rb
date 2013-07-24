@@ -83,29 +83,34 @@ module ElasticSearchable
           scope = options.delete(:scope) || self
           page = options[:page]
           per_page = options[:per_page]
-          records = scope.limit(per_page).offset(per_page * (page -1)).all
-          while records.any? do
-            ElasticSearchable.logger.debug "reindexing batch ##{page}..."
-            actions = []
-            records.each do |record|
-              next unless record.should_index?
-              begin
-                doc = ElasticSearchable.encode_json(record.as_json_for_index)
-                actions << ElasticSearchable.encode_json({:index => {'_index' => ElasticSearchable.index_name, '_type' => index_type, '_id' => record.id}})
-                actions << doc
-              rescue => e
-                ElasticSearchable.logger.warn "Unable to bulk index record: #{record.inspect} [#{e.message}]"
-              end
-            end
-            begin
-              ElasticSearchable.request(:put, '/_bulk', :body => "\n#{actions.join("\n")}\n") if actions.any?
-            rescue ElasticError => e
-              ElasticSearchable.logger.warn "Error indexing batch ##{page}: #{e.message}"
-              ElasticSearchable.logger.warn e
-            end
 
-            page += 1
-            records = scope.limit(per_page).offset(per_page* (page-1)).all
+          records = scope.limit(per_page).offset(per_page * (page -1)).all
+          [].tap do |errors|
+            while records.any? do
+              ElasticSearchable.logger.debug "reindexing batch ##{page}..."
+              actions = []
+              records.each do |record|
+                next unless record.should_index?
+                begin
+                  doc = ElasticSearchable.encode_json(record.as_json_for_index)
+                  actions << ElasticSearchable.encode_json({:index => {'_index' => ElasticSearchable.index_name, '_type' => index_type, '_id' => record.id}})
+                  actions << doc
+                rescue Exception => e
+                  errors << record.id
+                  ElasticSearchable.logger.warn "Unable to bulk index record: #{record.inspect} [#{e.message}]"
+                end
+              end
+              begin
+                ElasticSearchable.request(:put, '/_bulk', :body => "\n#{actions.join("\n")}\n") if actions.any?
+              rescue ElasticError => e
+                errors = errors | records.map(&:id)
+                ElasticSearchable.logger.warn "Error indexing batch ##{page}: #{e.message}"
+                ElasticSearchable.logger.warn e
+              end
+
+              page += 1
+              records = scope.limit(per_page).offset(per_page* (page-1)).all
+            end
           end
         end
 

@@ -122,6 +122,42 @@ class TestElasticSearchable < Test::Unit::TestCase
     end
   end
 
+  context "Model.reindex" do
+    setup do
+      Post.create_index
+      Post.delete_all
+      @first_post = Post.create :title => 'foo', :body => "first bar"
+      @second_post = Post.create :title => 'foo', :body => "second bar"
+      Post.delete_index
+      Post.create_index
+    end
+
+    teardown do
+      Post.class_eval do
+        def as_json_for_index
+          super
+        end
+      end
+    end
+
+    should "return empty array if there are no errors" do
+      assert_equal [], Post.reindex
+    end
+
+    should "return the ids of records that had errors" do
+      Post.class_eval "def error_id; #{@first_post.id}; end"
+
+      Post.class_eval do
+        def as_json_for_index
+          raise Exception.new if id == error_id
+          super
+        end
+      end
+
+      assert_equal [@first_post.id], Post.reindex
+    end
+  end
+
   context 'Model.create within two ElasticSearchable.offline blocks' do
     setup do
       ElasticSearchable.offline do
