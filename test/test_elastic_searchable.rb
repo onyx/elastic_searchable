@@ -193,6 +193,21 @@ class TestElasticSearchable < Test::Unit::TestCase
     end
   end
 
+  context "index_exists?" do
+    setup do
+      Post.delete_index
+    end
+
+    should "return false if index does not exist" do
+      assert_equal false, Post.index_exists?
+    end
+
+    should "return true if index exists" do
+      Post.create_index
+      assert_equal true, Post.index_exists?
+    end
+  end
+
   context 'with index containing multiple results' do
     setup do
       ElasticSearchable.create_index

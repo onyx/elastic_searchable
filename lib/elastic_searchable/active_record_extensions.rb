@@ -167,6 +167,7 @@ module ElasticSearchable
         # http://www.elasticsearch.com/docs/elasticsearch/rest_api/admin/indices/put_mapping/
         def create_mapping
           return unless self.elastic_options[:mapping]
+          create_index unless index_exists?
           ElasticSearchable.request :put, index_mapping_path('_mapping'), :json_body => {index_type => self.elastic_options[:mapping]}
         end
 
@@ -176,6 +177,26 @@ module ElasticSearchable
           ElasticSearchable.request :delete, index_mapping_path(id)
         rescue ElasticSearchable::ElasticError => e
           ElasticSearchable.logger.warn e
+        end
+
+        # Helper method...not sure why they removed this from AR extension in the real gem
+        def create_index
+          ElasticSearchable.create_index
+        end
+
+        # Helper method...not sure why they removed this from AR extension in the real gem
+        def refresh_index
+          ElasticSearchable.refresh_index
+        end
+
+        # Helper method...not sure why they removed this from AR extension in the real gem
+        def delete_index
+          ElasticSearchable.delete_index if index_exists?
+        end
+
+        # Helper method...
+        def index_exists?
+          ElasticSearchable.request(:get, '/_status')['indices'].include?(ElasticSearchable.index_name)
         end
 
         private
