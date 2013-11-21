@@ -16,6 +16,7 @@ $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 $LOAD_PATH.unshift(File.dirname(__FILE__))
 require 'elastic_searchable'
 require 'setup_database'
+require 'time_as_json'
 
 class Test::Unit::TestCase
   def delete_index

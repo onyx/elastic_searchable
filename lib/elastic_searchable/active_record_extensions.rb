@@ -141,9 +141,9 @@ module ElasticSearchable
             query[:sort] = sort
           end
 
-          if requested_facets = options.delete(:term_facets)
-            options[:facets] = term_facet_query_from requested_facets
-          end
+          options[:facets] = {}
+          options[:facets].merge! term_facet_query_from(options.delete(:term_facets))
+          options[:facets].merge! range_facet_query_from(options.delete(:range_facets))
 
           response = ElasticSearchable.request :get, index_mapping_path('_search'), :query => query, :json_body => options
           hits = response['hits']
@@ -245,6 +245,7 @@ module ElasticSearchable
         end
 
         def term_facet_query_from request
+          return {} if request.nil?
           request.inject({}) do |hash, attr_hash|
             field = attr_hash.keys.first
             hash.merge({
@@ -258,22 +259,60 @@ module ElasticSearchable
           end
         end
 
-        def facets_response_from facets
-          return {} if facets.nil?
-          facets.keys.inject({}) do |hash, field|
-            hash.merge(facet_response_for_field(facets, field))
+        def range_facet_query_from request
+          return {} if request.nil?
+          request.inject({}) do |hash, attr_hash|
+            field = attr_hash.keys.first
+            ranges = attr_hash[field].map do |range_string|
+              from, to = range_string.split('|')
+              {}.tap do |range|
+                range.merge!({ :from => from }) unless from.blank?
+                range.merge!({ :to => to }) unless to.blank?
+              end
+            end
+
+            hash.merge({
+              field => {
+                :range => {
+                  :field => field,
+                  :ranges => ranges
+                }
+              }
+            })
           end
         end
 
-        def facet_response_for_field facets, field
-          counts = facets[field]['terms'].map do |term|
-            { term['term'] => term['count'] }
+        def facets_response_from facets
+          return {} if facets.nil?
+          facets.keys.inject({}) do |hash, field|
+            if facets[field]['terms']
+              hash.merge(term_facet_response_for_field(facets, field))
+            elsif facets[field]['ranges']
+              hash.merge(range_facet_response_for_field(facets, field))
+            end
+          end
+        end
+
+        def term_facet_response_for_field facets, field
+          counts = facets[field]['terms'].map do |term_response|
+            { term_response['term'] => term_response['count'] }
           end
 
           { field.to_sym => {
               :counts => counts,
               :missing => facets[field]['missing'],
               :other => facets[field]['other']
+            }
+          }
+        end
+
+        def range_facet_response_for_field facets, field
+          counts = facets[field]['ranges'].map do |range_response|
+            { "#{range_response['from_str']}|#{range_response['to_str']}" => range_response['count'] }
+          end
+
+          { field.to_sym => {
+              :counts => counts
             }
           }
         end

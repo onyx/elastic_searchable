@@ -12,6 +12,8 @@ ActiveRecord::Schema.define(:version => 1) do
     t.column :title, :string
     t.column :body, :string
     t.column :name, :string
+    t.column :number, :integer
+    t.column :last_used, :datetime
   end
   create_table :blogs, :force => true do |t|
     t.column :title, :string
