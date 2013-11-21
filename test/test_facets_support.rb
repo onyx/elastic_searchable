@@ -16,7 +16,7 @@ class TestElasticSearchable < Test::Unit::TestCase
       }
   end
 
-  context "facets" do
+  context "term_facets" do
     setup do
       Thing.create_index
       Thing.create! :title => 'AA', :body => 'more stuff', :name => 'Foo'
@@ -31,7 +31,7 @@ class TestElasticSearchable < Test::Unit::TestCase
     end
 
     should 'return counts for each item' do
-      facets = Thing.search('stuff', { :facets => [{:title => 5}] })[:facets]
+      facets = Thing.search('stuff', { :term_facets => [{:title => 5}] })[:facets]
       assert_equal 1, facets.keys.size
       assert_equal({ 'AA' => 3 }, facets[:title][:counts][0])
       assert_equal({ 'DD' => 2 }, facets[:title][:counts][1])
@@ -41,20 +41,20 @@ class TestElasticSearchable < Test::Unit::TestCase
     end
 
     should 'return counts for multiple facets' do
-      facets = Thing.search('stuff', { :facets => [{:title => 5}, {:name => 5}] })[:facets]
+      facets = Thing.search('stuff', { :term_facets => [{:title => 5}, {:name => 5}] })[:facets]
       assert_equal 2, facets.keys.size
       assert_equal 5, facets[:title][:counts].size
       assert_equal 1, facets[:name][:counts].size
     end
 
     should 'show the count of missing' do
-      facets = Thing.search('stuff', { :facets => [{:name => 5}] })[:facets]
+      facets = Thing.search('stuff', { :term_facets => [{:name => 5}] })[:facets]
       assert_equal 1, facets.keys.size
       assert_equal(6, facets[:name][:missing])
     end
 
     should 'show the count of other (when the number exceeds the request number of facets' do
-      facets = Thing.search('stuff', { :facets => [{ :title => 3}] })[:facets]
+      facets = Thing.search('stuff', { :term_facets => [{ :title => 3}] })[:facets]
       assert_equal 1, facets.keys.size
       assert_equal 2, facets[:title][:other]
     end
