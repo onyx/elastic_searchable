@@ -141,8 +141,8 @@ module ElasticSearchable
             query[:sort] = sort
           end
 
-          if requested_facets = options.delete(:facets)
-            options[:facets] = facet_query_from requested_facets
+          if requested_facets = options.delete(:term_facets)
+            options[:facets] = term_facet_query_from requested_facets
           end
 
           response = ElasticSearchable.request :get, index_mapping_path('_search'), :query => query, :json_body => options
@@ -244,7 +244,7 @@ module ElasticSearchable
           per_page
         end
 
-        def facet_query_from request
+        def term_facet_query_from request
           request.inject({}) do |hash, attr_hash|
             field = attr_hash.keys.first
             hash.merge({
