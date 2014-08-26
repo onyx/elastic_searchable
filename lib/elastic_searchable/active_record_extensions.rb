@@ -247,11 +247,11 @@ module ElasticSearchable
         def build_facet_filter(field, filters)
           if filters.key?(:and)
             {:and => filters[:and].reject do |and_condition|
-              and_condition[:terms].key?(field.to_s)
+              and_condition[:terms] && and_condition[:terms].key?(field.to_s)
               end
             }
           else
-            filters unless filters[:terms].key? field.to_s
+            filters unless filters[:terms] && filters[:terms].key?(field.to_s)
           end
         end
 
