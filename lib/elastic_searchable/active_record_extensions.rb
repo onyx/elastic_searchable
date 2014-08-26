@@ -142,7 +142,7 @@ module ElasticSearchable
           end
 
           options[:facets] = {}
-          options[:facets].merge! term_facet_query_from(options.delete(:term_facets))
+          options[:facets].merge! term_facet_query_from(options.delete(:term_facets), options[:filter])
           options[:facets].merge! range_facet_query_from(options.delete(:range_facets))
 
           response = ElasticSearchable.request :get, index_mapping_path('_search'), :query => query, :json_body => options
@@ -244,11 +244,21 @@ module ElasticSearchable
           per_page
         end
 
-        def term_facet_query_from request
+        def build_facet_filter(field, filters)
+          if filters.key?(:and)
+            filters[:and].reject do |and_condition|
+              and_condition[:terms].key?(field.to_s)
+            end
+          else
+            filters unless filters[:terms].key? field.to_s
+          end
+        end
+
+        def term_facet_query_from request, filters
           return {} if request.nil?
           request.inject({}) do |hash, attr_hash|
             field = attr_hash.keys.first
-            hash.merge({
+            new_hash = hash.merge({
               field => {
                 :terms => {
                   :field => field,
@@ -256,6 +266,9 @@ module ElasticSearchable
                 }
               }
             })
+            facet_filter = build_facet_filter(field, filters) if filters
+            new_hash[field][:facet_filter] = facet_filter if facet_filter
+            new_hash
           end
         end
 
